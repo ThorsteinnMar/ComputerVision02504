@@ -1,0 +1,37 @@
+# Computation Question Index
+
+| Problem type | When to use it | Function/template | Typical inputs | Output | Common traps |
+|---|---|---|---|---|---|
+| Homogeneous conversion | Convert between Euclidean and homogeneous coordinates | `exam_toolkit.pi`, `exam_toolkit.pi_inv` | `(d,N)` or `(d+1,N)` | Converted points | Last homogeneous coordinate must be non-zero |
+| Build camera intrinsics `K` | Given focal length + principal point | `exam_toolkit.camera_intrinsic`, `exam_templates.exam2023_templates.q1_intrinsic_matrix` | `f, (cx,cy), alpha, beta` | `K (3x3)` | Mixing `alpha/beta` meaning |
+| Resize intrinsics | Image resized by known x/y scale | `exam_toolkit.resize_intrinsics`, `exam_templates.exam2023_templates.q2_resize_intrinsics_or_pixel` | `K, sx, sy` | `K_new` | Forgetting principal point must also scale |
+| 3D projection | Given `K,R,t,Q` and need image pixel | `exam_toolkit.project_points`, `exam_templates.exam2024_templates.q1_projection` | `K (3x3), R (3x3), t (3x1), Q (3xN)` | `p (2xN)` | Wrong point orientation (`Nx3` vs `3xN`) |
+| `P = K[R|t]` | Need camera matrix from intrinsics/extrinsics | `exam_toolkit.projection_matrix` | `K,R,t` | `P (3x4)` | Using row-vector convention by mistake |
+| Rodrigues conversion | Rotation vector provided in exam text | `exam_toolkit.rodrigues_to_matrix`, `exam_toolkit.matrix_to_rodrigues` | `rvec (3,)` or `R (3x3)` | `R` or `rvec` | Passing degrees instead of Rodrigues vector |
+| Camera center from `R,t` | Question asks camera position | `exam_toolkit.camera_center_from_rt`, `exam_templates.exam2024_templates.q17_camera_position` | `R,t` | `C (3x1)` | Using `-Rt` instead of `-R^T t` |
+| World/camera frame transforms | Convert points between frames | `exam_toolkit.world_to_camera`, `exam_toolkit.camera_to_world`, `exam_toolkit.camera_to_camera` | `R,t,points` | Converted `3xN` points | Wrong direction of transform |
+| Point-line distance | Distance from 2D point to homogeneous line | `exam_toolkit.point_line_distance`, `exam_templates.exam2023_templates.q11_point_line_distance` | `l (3x1), p_h (3x1)` | Scalar distance | Forgetting homogeneous point scale |
+| Line from two points | Need line equation through points | `exam_toolkit.line_from_points` | `p1,p2 (2x1)` | `l (3x1)` | Using identical points |
+| Line intersection | Need point from two line equations | `exam_toolkit.line_intersection` | `l1,l2 (3x1)` | `p (2x1)` | Parallel lines give unstable/invalid intersection |
+| Radial distortion (normalized) | Apply lens distortion model | `exam_toolkit.distort_normalized_points` | `q (2xN), dist_coeffs` | Distorted `2xN` | Coefficient order (`k3,k5,k7,...`) |
+| Pixel-normalized conversion | Switch between pixel and normalized coords | `exam_toolkit.pixel_to_normalized_points`, `exam_toolkit.normalized_to_pixel_points` | `p,K` or `q,K` | Converted points | Using wrong `K` after resize |
+| Distort/undistort pixel points | Forward/backward distortion mapping | `exam_toolkit.distort_pixel_points`, `exam_toolkit.undistort_pixel_points_iterative`, `exam_templates.exam2024_templates.q4_distortion_mapping` | `p,K,dist_coeffs` | Mapped points | Expecting exact closed-form inverse distortion |
+| Homography estimation | Given 4+ correspondences and planar mapping | `exam_toolkit.homography_dlt`, `exam_templates.exam2024_templates.q2_homography_from_4_points` | `q1,q2 (2xN)` | `H (3x3)` | Reversing correspondence direction (`q1~Hq2`) |
+| Homography application | Map points with known `H` | `exam_toolkit.apply_homography` | `H, q` | Transferred points | Forgetting homogeneous normalization |
+| Homography errors/inliers | RANSAC or option checking | `exam_toolkit.transfer_error`, `exam_toolkit.symmetric_transfer_error`, `exam_toolkit.homography_inlier_mask` | `H,q1,q2,threshold` | Error vector or mask | Threshold interpreted in wrong units |
+| Essential matrix | Need `E` from relative pose | `exam_toolkit.essential_matrix` | `R_rel, t_rel` | `E (3x3)` | Using non-relative pose directly |
+| Fundamental matrix | Need `F` from two calibrated cameras | `exam_toolkit.fundamental_matrix_from_extrinsics` | `K1,R1,t1,K2,R2,t2` | `F (3x3)` | Extrinsics direction mismatch |
+| Convert `E <-> F` | `K` known and one matrix missing | `exam_toolkit.fundamental_from_essential`, `exam_toolkit.essential_from_fundamental` | `E/F, K1, K2` | Converted matrix | Using inverse-transpose on wrong side |
+| Epipolar line and distance | Given `F` and point correspondence | `exam_toolkit.epipolar_line`, `exam_toolkit.point_to_epipolar_distance`, `exam_templates.exam2024_templates.q15_epipolar_distance` | `F, p1, p2` | Line and/or scalar distance | Mixing which image line is computed in |
+| Sampson distance | Score correspondences to `F` | `exam_toolkit.sampson_distance` | `F, p1, p2` | Distances `(N,)` | Not using homogeneous points |
+| Linear triangulation | Reconstruct 3D point from views | `exam_toolkit.triangulate_linear`, `exam_templates.exam2023_templates.q6_linear_triangulation` | `q_list, P_list` | `Q (3x1)` | Using fewer than 2 views |
+| Nonlinear triangulation | Minimize reprojection error | `exam_toolkit.triangulate_nonlinear`, `exam_templates.exam2024_templates.q16_triangulate_nonlinear` | `q_list, P_list` | Refined `Q (3x1)` | Missing SciPy |
+| Reprojection error | Validate triangulation/calibration | `exam_toolkit.reprojection_errors`, `exam_toolkit.reprojection_rmse` | `Q,q_list,P_list` | Error metrics | Interpreting RMSE as per-view error |
+| Projection DLT | Estimate `P` from 3D-2D pairs | `exam_toolkit.estimate_projection_dlt` | `Q (3xN), q (2xN)` | `P (3x4)` | Too few/non-diverse correspondences |
+| Zhang calibration | Intrinsic/extrinsic from checkerboard views | `exam_toolkit.calibrate_zhang`, `exam_templates.exam2024_templates.q10_calibrate_from_corners` | `q_list, Q_planar` | `K, Rs, ts` | Bad corner ordering across views |
+| Harris response + NMS | Corner count/location from tensor values | `exam_toolkit.harris_response_from_tensor`, `exam_toolkit.non_max_suppression_2d`, `exam_templates.exam2024_templates.q6_harris_from_tensor` | `gxx,gyy,gxy,k,tau` | Response map + corners | 4-neighborhood vs 8-neighborhood mismatch |
+| DoG / blob helper | Scale-space computational questions | `exam_toolkit.difference_of_gaussians`, `exam_toolkit.detect_blobs_dog`, `exam_templates.exam2023_templates.q15_difference_of_gaussians` | `image,sigma0,num_scales` | DoG/blobs | Threshold too low/high |
+| RootSIFT matching | Match-count questions with ratio test | `exam_toolkit.rootsift_descriptors`, `exam_toolkit.match_descriptors_ratio`, `exam_templates.exam2024_templates.q9_rootsift_ratio_count` | `des1,des2,ratio` | Match list/count | Forgetting RootSIFT normalization |
+| RANSAC iteration count | Iteration-choice MCQ | `exam_toolkit.ransac_iterations_required`, `exam_templates.exam2024_templates.q19_ransac_iterations` | `inliers,total,confidence,sample_size` | Scalar `N` | Using percent instead of fraction |
+| Squared threshold from sigma | RANSAC/chi-square threshold MCQ | `exam_toolkit.squared_reprojection_threshold`, `exam_templates.exam2024_templates.q20_squared_threshold` | `sigma, chi2` | `tau^2` | Confusing `tau` and `tau^2` |
+| Structured-light phase unwrap | Two-frequency phase question | `exam_toolkit.structured_light_unwrap_phase`, `exam_templates.exam2024_templates.q21_structured_light` | `primary, secondary, n1` | Unwrapped phase | Wrong harmonic index in FFT |
